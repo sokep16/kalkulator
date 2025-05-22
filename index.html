@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kalkulator Alya</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding-top: 60px;
+      overflow-x: hidden;
+    }
+
+    /* Fade-in blur effect */
+    .fade-in {
+      opacity: 0;
+      filter: blur(10px);
+      transform: translateY(30px);
+      animation: fadeIn 1s ease-out forwards;
+    }
+
+    .fade-in-delay {
+      animation-delay: 0.8s;
+    }
+
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateY(0);
+      }
+    }
+
+    /* Typing effect */
+    #header {
+      font-size: 3.5rem;
+      font-weight: bold;
+      color: black;
+      text-shadow: 0 0 3px lime, 0 0 5px lime;
+      overflow: hidden;
+      white-space: nowrap;
+      border-right: 3px solid lime;
+      width: 0;
+      animation: typing 2s steps(20, end) forwards, blink 0.7s step-end infinite;
+    }
+
+    @keyframes typing {
+      to { width: 100%; }
+    }
+
+    @keyframes blink {
+      50% { border-color: transparent; }
+    }
+
+    .calculator {
+      background-color: #1e1e1e;
+      padding: 40px;
+      border-radius: 25px;
+      box-shadow: 0 0 50px rgba(0,0,0,0.8);
+      width: 90%;
+      max-width: 480px;
+    }
+
+    .display {
+      background-color: #000;
+      color: #0f0;
+      font-size: 3rem;
+      padding: 25px 20px;
+      text-align: right;
+      border-radius: 15px;
+      margin-bottom: 30px;
+      height: 100px;
+      overflow-x: auto;
+      white-space: nowrap;
+      font-family: 'Consolas', monospace;
+      letter-spacing: 2px;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    button {
+      padding: 25px 0;
+      font-size: 2rem;
+      border: none;
+      border-radius: 15px;
+      background-color: #2e2e2e;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #444;
+    }
+
+    .zero {
+      grid-column: span 2;
+    }
+
+    #deleteBtn {
+      background-color: #a33;
+      font-weight: bold;
+      font-size: 2.3rem;
+    }
+
+    #deleteBtn:hover {
+      background-color: #d44;
+    }
+  </style>
+</head>
+<body>
+  <!-- Typing header -->
+  <div id="header" class="fade-in">SOKEP HOST</div>
+
+  <!-- Kalkulator -->
+  <div class="calculator fade-in fade-in-delay">
+    <div class="display" id="display">0</div>
+    <div class="buttons">
+      <button onclick="clearDisplay()">C</button>
+      <button onclick="appendOperator('/')">÷</button>
+      <button onclick="appendOperator('*')">×</button>
+      <button id="deleteBtn">⌫</button>
+
+      <button onclick="appendNumber('7')">7</button>
+      <button onclick="appendNumber('8')">8</button>
+      <button onclick="appendNumber('9')">9</button>
+      <button onclick="appendOperator('-')">−</button>
+
+      <button onclick="appendNumber('4')">4</button>
+      <button onclick="appendNumber('5')">5</button>
+      <button onclick="appendNumber('6')">6</button>
+      <button onclick="appendOperator('+')">+</button>
+
+      <button onclick="appendNumber('1')">1</button>
+      <button onclick="appendNumber('2')">2</button>
+      <button onclick="appendNumber('3')">3</button>
+      <button onclick="calculate()">=</button>
+
+      <button onclick="appendNumber('0')" class="zero">0</button>
+      <button onclick="appendDecimal()">.</button>
+    </div>
+  </div>
+
+  <audio id="clickSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_b4715d4ec4.mp3" preload="auto"></audio>
+
+  <script>
+    const display = document.getElementById('display');
+    const clickSound = document.getElementById('clickSound');
+    const deleteBtn = document.getElementById('deleteBtn');
+
+    let expression = '0';
+
+    function playSound() {
+      clickSound.currentTime = 0;
+      clickSound.play();
+    }
+
+    function formatDisplayNumber(numStr) {
+      const tokens = [];
+      let buffer = '';
+      for (let char of numStr) {
+        if ('+-*/'.includes(char)) {
+          if (buffer) tokens.push(buffer);
+          tokens.push(char);
+          buffer = '';
+        } else {
+          buffer += char;
+        }
+      }
+      if (buffer) tokens.push(buffer);
+
+      const formatted = tokens.map(token => {
+        if ('+-*/'.includes(token)) return token;
+        return token.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      });
+
+      return formatted.join(' ');
+    }
+
+    function updateDisplay() {
+      display.textContent = formatDisplayNumber(expression) || '0';
+    }
+
+    function appendNumber(num) {
+      playSound();
+      if (expression === '0') expression = num;
+      else expression += num;
+      updateDisplay();
+    }
+
+    function appendOperator(op) {
+      playSound();
+      if ('+-*/'.includes(expression.slice(-1))) {
+        expression = expression.slice(0, -1) + op;
+      } else {
+        expression += op;
+      }
+      updateDisplay();
+    }
+
+    function appendDecimal() {
+      playSound();
+      const last = expression.split(/[\+\-\*\/]/).pop();
+      if (!last.includes('.')) expression += '.';
+      updateDisplay();
+    }
+
+    function clearDisplay() {
+      playSound();
+      expression = '0';
+      updateDisplay();
+    }
+
+    function deleteLast() {
+      expression = expression.slice(0, -1);
+      if (!expression) expression = '0';
+      updateDisplay();
+    }
+
+    function calculate() {
+      playSound();
+      try {
+        const result = eval(expression);
+        expression = result.toString();
+      } catch {
+        expression = 'Error';
+      }
+      updateDisplay();
+    }
+
+    // Delete hold support
+    let deleteInterval;
+    deleteBtn.addEventListener('mousedown', () => {
+      playSound();
+      deleteLast();
+      deleteInterval = setInterval(deleteLast, 80);
+    });
+    deleteBtn.addEventListener('touchstart', () => {
+      playSound();
+      deleteLast();
+      deleteInterval = setInterval(deleteLast, 80);
+    });
+    ['mouseup', 'mouseleave', 'touchend', 'touchcancel'].forEach(evt => {
+      deleteBtn.addEventListener(evt, () => clearInterval(deleteInterval));
+    });
+
+    // Initialize
+    updateDisplay();
+  </script>
+</body>
+</html>
